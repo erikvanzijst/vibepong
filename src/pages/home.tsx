@@ -93,7 +93,8 @@ export function HomePage() {
     difficulty: 2 as 1 | 2 | 3,
     pY: H / 2 - PADDLE_H / 2,
     cY: H / 2 - PADDLE_H / 2,
-    cTarget: H / 2 - PADDLE_H / 2,
+    cAimY: H / 2, // center of the CPU paddle's (stale) destination, in play units
+    cReactTimer: 0,
     ball: { x: W / 2, y: H / 2, vx: 0, vy: 0 } as Ball,
     scoreP: 0,
     scoreC: 0,
@@ -255,20 +256,19 @@ export function HomePage() {
     if (s.mode === "play") {
       const b = s.ball;
 
-      // CPU: predict where the ball will reach its side, then move there.
-      // Faster, sharper, and only "flawed" per difficulty by a reaction lag.
-      if (b.vx > 0) {
-        const dist = W - 22 - PADDLE_W - b.x;
-        const tHit = dist / b.vx;
-        let predict = b.y + b.vy * tHit;
-        predict = reflectY(predict);
-        const maxSpeed = Math.max(5.4 + s.difficulty * 1.1, s.speed * 1.25);
-        const lag = Math.max(0, 1.6 - s.difficulty * 0.5); // fewer reaction frames at higher diff
-        s.cTarget = clamp(predict - PADDLE_H / 2, 0, H - PADDLE_H);
-        const dy = s.cTarget - s.cY;
-        const stepA = clamp(dy * (1 / Math.max(lag, 1)), -maxSpeed * dt, maxSpeed * dt);
-        s.cY += stepA;
+      // CPU: act like a human tracking the ball — no future-trajectory
+      // prediction. It re-aims at the ball's *current* position only every
+      // so often (a reaction delay), with aim error, and moves no faster
+      // than the player's paddle can.
+      s.cReactTimer -= dt;
+      if (s.cReactTimer <= 0) {
+        s.cReactTimer = cpuReactInterval(s.difficulty);
+        const err = (4 - s.difficulty) * 0.22 * PADDLE_H + (Math.random() - 0.5) * 18;
+        s.cAimY = clamp(b.y + err, PADDLE_H / 2, H - PADDLE_H / 2);
       }
+      const cpuMax = 4.4 + s.difficulty * 0.6; // always a bit slower than the player
+      const dy = s.cAimY - (s.cY + PADDLE_H / 2);
+      s.cY += clamp(dy, -cpuMax * dt, cpuMax * dt);
 
       b.x += b.vx * dt;
       b.y += b.vy * dt;
@@ -325,8 +325,8 @@ export function HomePage() {
     } else if (s.mode === "serve" || s.mode === "attract" || s.mode === "over") {
       // attract: gentle cpu-only demo
       if (s.mode === "attract") {
-        s.cTarget = (Math.sin(s.time * 0.004) * 0.5 + 0.5) * (H - PADDLE_H);
-        const dy = s.cTarget - s.cY;
+        s.cAimY = (Math.sin(s.time * 0.004) * 0.5 + 0.5) * (H - PADDLE_H) + PADDLE_H / 2;
+        const dy = s.cAimY - (s.cY + PADDLE_H / 2);
         s.cY += clamp(dy, -3.2 * dt, 3.2 * dt);
       }
     }
@@ -461,11 +461,11 @@ function bumpSpeed(s: { speed: number; difficulty: number }) {
 }
 
 // Fold a y coordinate back into [0, H] as if bouncing off the top/bottom walls.
-function reflectY(y: number) {
-  const span = H;
-  let m = ((y % (2 * span)) + 2 * span) % (2 * span);
-  if (m > span) m = 2 * span - m;
-  return m;
+
+// How often (in frames) the CPU re-evaluates where the ball actually is. A
+// longer interval = a slower, more human reaction time at lower difficulty.
+function cpuReactInterval(difficulty: number) {
+  return 0.30 - (difficulty - 1) * 0.09;
 }
 
 // ---------------------------------------------------------------- draw
