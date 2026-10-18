@@ -1,0 +1,284 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --color-brand-from: var(--brand-from);
+    --color-brand-to: var(--brand-to);
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', monospace, sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-appone: var(--sidebar);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+}
+
+:root {
+    --brand-from: #ffb000;
+    --brand-to: #ff5500;
+    --background: #0a0806;
+    --foreground: #f2f4e8;
+    --card: #181512;
+    --card-foreground: #f2f4e8;
+    --popover: #181512;
+    --popover-foreground: #f2f4e8;
+    --primary: #ffb000;
+    --primary-foreground: #140d04;
+    --secondary: #26211c;
+    --secondary-foreground: #e6dcc8;
+    --muted: #221d18;
+    --muted-foreground: #a89984;
+    --accent: #ff6a00;
+    --accent-foreground: #140d04;
+    --destructive: #e03c28;
+    --border: #3a3128;
+    --input: #2b241d;
+    --ring: #ffb000;
+    --radius: 0.375rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  html, body, #root {
+    height: 100dvh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #080604;
+    color: #f2f4e8;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* 1970s Walnut Woodgrain Laminate */
+.woodgrain-panel {
+  background-color: #4a2811;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(25, 11, 3, 0.38) 0px,
+      rgba(25, 11, 3, 0.38) 2px,
+      transparent 2px,
+      transparent 7px,
+      rgba(20, 8, 2, 0.22) 7px,
+      rgba(20, 8, 2, 0.22) 9px,
+      transparent 9px,
+      transparent 18px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 166, 77, 0.05) 0px,
+      rgba(0, 0, 0, 0.18) 140px,
+      rgba(255, 166, 77, 0.04) 280px
+    ),
+    linear-gradient(180deg, #5e3417 0%, #3d200c 48%, #4e2a11 75%, #2d1607 100%);
+  box-shadow:
+    inset 2px 0 4px rgba(255, 200, 140, 0.18),
+    inset -3px 0 8px rgba(0, 0, 0, 0.75);
+}
+
+/* Brushed Anodized Dark Metal Bezel */
+.metal-bezel {
+  background-color: #191816;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.016) 0px,
+      rgba(255, 255, 255, 0.016) 1px,
+      rgba(0, 0, 0, 0.03) 1px,
+      rgba(0, 0, 0, 0.03) 2px
+    ),
+    radial-gradient(circle at 50% 42%, #292724 0%, #151412 72%, #0c0b0a 100%);
+}
+
+/* Brushed Silver Control Plate */
+.brushed-aluminum-plate {
+  background-color: #272420;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 0px,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(180deg, #2d2925 0%, #1b1815 55%, #12100e 100%);
+}
+
+/* CRT Scanlines & Aperture Grille */
+.crt-scanlines {
+  background:
+    linear-gradient(
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.48) 50%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.03),
+      rgba(0, 255, 0, 0.015),
+      rgba(0, 0, 255, 0.03)
+    );
+  background-size: 100% 4px, 6px 100%;
+}
+
+/* CRT Curved Tube Vignette & Glass Glare */
+.crt-vignette {
+  background:
+    radial-gradient(
+      circle at 24% 18%,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.018) 22%,
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      transparent 58%,
+      rgba(0, 0, 0, 0.45) 84%,
+      rgba(0, 0, 0, 0.88) 100%
+    );
+  box-shadow:
+    inset 0 0 38px rgba(0, 0, 0, 0.92),
+    inset 0 2px 12px rgba(255, 255, 255, 0.08);
+}
+
+/* Subtle CRT 60Hz Flicker */
+@keyframes crt-flicker {
+  0% { opacity: 0.985; }
+  50% { opacity: 1; }
+  100% { opacity: 0.99; }
+}
+
+.crt-flicker {
+  animation: crt-flicker 0.12s infinite alternate;
+}
+
+/* Tactile Arcade Pushbutton */
+.arcade-pushbutton {
+  transition: transform 60ms ease, box-shadow 60ms ease, filter 80ms ease;
+}
+.arcade-pushbutton:active {
+  transform: translateY(2px) scale(0.985);
+}
+
+/* Phosphor — the classic Pong green */
+:root {
+  --pong-phosphor: #8bffa3;
+  --pong-phosphor-dim: #57d97f;
+  --pong-glow: rgba(139, 255, 163, 0.55);
+  --wood-diplomat: #efe0c8;
+}
+
+/* Arcade marquee title — warm incandescent glow */
+.arcade-marquee-text {
+  font-family: 'Geist Variable', monospace, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  color: #ffe9bb;
+  text-shadow:
+    0 0 6px rgba(255, 214, 140, 0.85),
+    0 0 18px rgba(255, 166, 60, 0.65),
+    0 0 40px rgba(255, 120, 30, 0.5),
+    0 1px 1px rgba(70, 30, 0, 0.9);
+}
+
+/* Coin-op light indicator */
+.coin-op-led {
+  box-shadow:
+    0 0 6px 1px var(--pong-glow),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+.coin-op-led.on {
+  background: radial-gradient(circle at 40% 35%, #d6ffde 0%, var(--pong-phosphor) 45%, #1f9a46 100%);
+}
+.coin-op-led.off {
+  background: radial-gradient(circle at 40% 35%, #1d2a20 0%, #14201a 60%, #0a120d 100%);
+}
+
+/* Big round arcade pushbutton */
+.arcade-round {
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 28%, #e8eef0 0%, #a4aeb4 38%, #5c666c 78%, #2e353a 100%);
+  box-shadow:
+    0 6px 0 #1c2024,
+    0 10px 14px rgba(0, 0, 0, 0.55),
+    inset 0 2px 3px rgba(255, 255, 255, 0.7),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.45);
+}
+.arcade-round:active {
+  box-shadow:
+    0 2px 0 #15191c,
+    0 4px 8px rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Illuminated ring behind the round button when lit */
+.arcade-round-lit {
+  box-shadow:
+    0 0 22px 4px var(--pong-glow),
+    0 6px 0 #1c2024,
+    0 10px 14px rgba(0, 0, 0, 0.55),
+    inset 0 2px 3px rgba(255, 255, 255, 0.7),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.45);
+}
+
+/* Chunky rectangular start/flap buttons */
+.arcade-solid-btn {
+  font-family: 'Geist Variable', monospace, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #121010;
+  background: linear-gradient(180deg, #f0d9a8 0%, #d9b97a 48%, #b8904e 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 246, 220, 0.8),
+    inset 0 -3px 4px rgba(90, 55, 10, 0.55),
+    0 3px 0 #5e3c14,
+    0 6px 12px rgba(0, 0, 0, 0.5);
+}
+.arcade-solid-btn:active {
+  background: linear-gradient(180deg, #d9b97a 0%, #c09a52 48%, #8f6a2c 100%);
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(90, 55, 10, 0.5),
+    0 1px 0 #5e3c14,
+    0 3px 6px rgba(0, 0, 0, 0.5);
+}
+.arcade-solid-btn.on {
+  color: #03150a;
+  background: linear-gradient(180deg, #b9ffd1 0%, #6fe79c 48%, #2fb46a 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(230, 255, 238, 0.85),
+    inset 0 -3px 4px rgba(8, 70, 34, 0.6),
+    0 3px 0 #123d22,
+    0 6px 12px rgba(0, 0, 0, 0.5),
+    0 0 18px 2px var(--pong-glow);
+}
