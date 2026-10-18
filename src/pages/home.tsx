@@ -8,6 +8,65 @@ const PADDLE_H = 84;
 const BALL = 10;
 const WIN_SCORE = 11;
 
+// ---------------------------------------------------------------- sound
+// Tiny 8-bit square-wave synth using the Web Audio API (no assets).
+let audioCtx: AudioContext | null = null;
+let muted = false;
+
+function ensureAudio(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+function beep(
+  freq: number,
+  dur: number,
+  opts: { type?: OscillatorType; vol?: number; slide?: number } = {},
+) {
+  if (muted) return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const { type = "square", vol = 0.18, slide } = opts;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  const t0 = ctx.currentTime;
+  osc.frequency.setValueAtTime(freq, t0);
+  if (slide !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(slide, 1), t0 + dur);
+  gain.gain.setValueAtTime(vol, t0);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur);
+}
+
+// Composite sound effects composed from simple beeps.
+const sfx = {
+  paddle() {
+    beep(220, 0.05, { type: "square", vol: 0.22, slide: 180 });
+  },
+  wall() {
+    beep(145, 0.04, { type: "square", vol: 0.16, slide: 120 });
+  },
+  score() {
+    beep(140, 0.16, { type: "sawtooth", vol: 0.2, slide: 90 });
+    beep(70, 0.24, { type: "square", vol: 0.18, slide: 45 });
+  },
+  serve() {
+    beep(320, 0.06, { type: "square", vol: 0.18, slide: 480 });
+  },
+  win() {
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((f, i) => setTimeout(() => beep(f, 0.12, { vol: 0.2 }), i * 110));
+  },
+};
+
 type Mode = "attract" | "serve" | "play" | "over";
 
 interface Ball {
@@ -26,6 +85,7 @@ export function HomePage() {
   const [scoreP, setScoreP] = useState(0);
   const [scoreC, setScoreC] = useState(0);
   const [winner, setWinner] = useState<"YOU" | "CPU" | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Mutable game world lives in refs (no re-render during the loop)
   const state = useRef({
@@ -38,6 +98,8 @@ export function HomePage() {
     scoreP: 0,
     scoreC: 0,
     keys: { up: false, down: false },
+    mouseActive: false,
+    mouseY: H / 2,
     serveTimer: 0,
     flash: 0,
     time: 0,
@@ -46,10 +108,15 @@ export function HomePage() {
   // ------------------------------------------------------------ controls
   const press = (k: "up" | "down", v: boolean) => {
     state.current.keys[k] = v;
-    if (v) wakeToServe();
+    if (v) {
+      state.current.mouseActive = false;
+      ensureAudio();
+      wakeToServe();
+    }
   };
   const wakeToServe = () => {
     const s = state.current;
+    allowAudio();
     if (s.mode === "attract" || s.mode === "over") {
       s.scoreP = 0;
       s.scoreC = 0;
@@ -63,6 +130,7 @@ export function HomePage() {
   };
   const startGame = () => {
     const s = state.current;
+    allowAudio();
     s.scoreP = 0;
     s.scoreC = 0;
     setScoreP(0);
@@ -88,10 +156,20 @@ export function HomePage() {
     s.ball.vy = Math.sin(ang) * speed;
     s.mode = "play";
     setMode("play");
+    sfx.serve();
   };
   const setDiff = (d: 1 | 2 | 3) => {
     setDifficulty(d);
     state.current.difficulty = d;
+    allowAudio();
+  };
+  const toggleMute = () => {
+    muted = !muted;
+    setIsMuted(muted);
+    allowAudio();
+  };
+  const allowAudio = () => {
+    if (!muted) ensureAudio();
   };
 
   // keys
@@ -113,6 +191,31 @@ export function HomePage() {
     return () => {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // mouse / pointer paddle + serve
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    const move = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const y = ((e.clientY - rect.top) / rect.height) * H;
+      const s = state.current;
+      s.mouseActive = true;
+      s.mouseY = clamp(y, PADDLE_H / 2, H - PADDLE_H / 2);
+    };
+    const down = () => {
+      const s = state.current;
+      if (s.mode === "attract" || s.mode === "over") wakeToServe();
+      else if (s.mode === "serve") launch();
+      allowAudio();
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mousedown", down);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mousedown", down);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -139,28 +242,43 @@ export function HomePage() {
     const py = 6.4;
     if (s.keys.up) s.pY -= py * dt;
     if (s.keys.down) s.pY += py * dt;
+    if (s.mouseActive) {
+      const dy = s.mouseY - (s.pY + PADDLE_H / 2);
+      // ease toward the pointer, plenty fast to feel 1:1
+      s.pY += clamp(dy, -8.5 * dt, 8.5 * dt);
+    }
     s.pY = clamp(s.pY, 0, H - PADDLE_H);
     s.time = (s.time ?? 0) + dt;
 
     if (s.mode === "play") {
-      // CPU tracks the ball with reaction lag & top speed
-      const maxSpeed = 3.4 + s.difficulty * 0.9;
-      const err = (difficultyError(s.difficulty) * H) / 2;
-      s.cTarget = clamp(s.ball.y - PADDLE_H / 2 + err, 0, H - PADDLE_H);
-      const dy = s.cTarget - s.cY;
-      const stepA = clamp(dy, -maxSpeed * dt, maxSpeed * dt);
-      s.cY += stepA;
-
       const b = s.ball;
+
+      // CPU: predict where the ball will reach its side, then move there.
+      // Faster, sharper, and only "flawed" per difficulty by a reaction lag.
+      if (b.vx > 0) {
+        const dist = W - 22 - PADDLE_W - b.x;
+        const tHit = dist / b.vx;
+        let predict = b.y + b.vy * tHit;
+        predict = reflectY(predict);
+        const maxSpeed = 5.4 + s.difficulty * 1.1;
+        const lag = Math.max(0, 1.6 - s.difficulty * 0.5); // fewer reaction frames at higher diff
+        s.cTarget = clamp(predict - PADDLE_H / 2, 0, H - PADDLE_H);
+        const dy = s.cTarget - s.cY;
+        const stepA = clamp(dy * (1 / Math.max(lag, 1)), -maxSpeed * dt, maxSpeed * dt);
+        s.cY += stepA;
+      }
+
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
       if (b.y <= 0) {
         b.y = 0;
         b.vy = Math.abs(b.vy);
+        sfx.wall();
       } else if (b.y >= H) {
         b.y = H;
         b.vy = -Math.abs(b.vy);
+        sfx.wall();
       }
 
       // player paddle
@@ -173,6 +291,7 @@ export function HomePage() {
           b.vx = Math.abs(Math.cos(ang) * speed);
           b.vy = Math.sin(ang) * speed;
           b.x = 22 + PADDLE_W + 1;
+          sfx.paddle();
         }
       }
       // cpu paddle
@@ -185,6 +304,7 @@ export function HomePage() {
           b.vx = -Math.abs(Math.cos(ang) * speed);
           b.vy = Math.sin(ang) * speed;
           b.x = W - 22 - PADDLE_W - BALL - 1;
+          sfx.paddle();
         }
       }
 
@@ -192,10 +312,12 @@ export function HomePage() {
       if (b.x < -BALL * 2) {
         s.scoreC++;
         setScoreC(s.scoreC);
+        sfx.score();
         afterPoint(s);
       } else if (b.x > W + BALL * 2) {
         s.scoreP++;
         setScoreP(s.scoreP);
+        sfx.score();
         afterPoint(s);
       }
     } else if (s.mode === "serve" || s.mode === "attract" || s.mode === "over") {
@@ -218,10 +340,12 @@ export function HomePage() {
       setWinner("YOU");
       s.mode = "over";
       setMode("over");
+      sfx.win();
     } else if (s.scoreC >= WIN_SCORE) {
       setWinner("CPU");
       s.mode = "over";
       setMode("over");
+      sfx.win();
     } else {
       beginServe();
       setMode("serve");
@@ -241,7 +365,14 @@ export function HomePage() {
           </div>
           <h1 className="arcade-marquee-text text-4xl sm:text-5xl">PONG</h1>
           <div className="flex flex-col items-end gap-2">
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleMute}
+                className="arcade-solid-btn h-6 w-10 rounded-sm text-[9px] border-none outline-none"
+                aria-label={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted ? "MUT" : "SND"}
+              </button>
               <span className={`coin-op-led h-3 w-3 rounded-full ${mode === "play" ? "on" : "off"}`} />
               <span className={`coin-op-led h-3 w-3 rounded-full ${winner ? "on" : "off"}`} />
             </div>
@@ -315,9 +446,12 @@ function clamp(v: number, lo: number, hi: number) {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
-function difficultyError(d: number) {
-  // higher difficulty = smaller aiming error / faster
-  return (4 - d) * 0.22;
+// Fold a y coordinate back into [0, H] as if bouncing off the top/bottom walls.
+function reflectY(y: number) {
+  const span = H;
+  let m = ((y % (2 * span)) + 2 * span) % (2 * span);
+  if (m > span) m = 2 * span - m;
+  return m;
 }
 
 // ---------------------------------------------------------------- draw
