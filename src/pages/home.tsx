@@ -100,6 +100,7 @@ export function HomePage() {
     keys: { up: false, down: false },
     mouseActive: false,
     mouseY: H / 2,
+    speed: 0,
     serveTimer: 0,
     flash: 0,
     time: 0,
@@ -149,11 +150,12 @@ export function HomePage() {
   const launch = () => {
     const s = state.current;
     if (s.mode !== "serve") return;
-    const speed = 5.4 + s.difficulty * 0.9;
+    const base = 5.4 + s.difficulty * 0.9;
+    s.speed = base; // rally speed resets on every serve, like the original
     const ang = (Math.random() - 0.5) * 0.7;
     const dir = Math.random() < 0.5 ? 1 : -1;
-    s.ball.vx = Math.cos(ang) * speed * dir;
-    s.ball.vy = Math.sin(ang) * speed;
+    s.ball.vx = Math.cos(ang) * base * dir;
+    s.ball.vy = Math.sin(ang) * base;
     s.mode = "play";
     setMode("play");
     sfx.serve();
@@ -195,10 +197,10 @@ export function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // mouse / pointer paddle + serve
+  // pointer (mouse + touch) paddle + serve
   useEffect(() => {
     const canvas = canvasRef.current!;
-    const move = (e: MouseEvent) => {
+    const move = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
       const y = ((e.clientY - rect.top) / rect.height) * H;
       const s = state.current;
@@ -211,11 +213,11 @@ export function HomePage() {
       else if (s.mode === "serve") launch();
       allowAudio();
     };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mousedown", down);
+    canvas.addEventListener("pointermove", move);
+    canvas.addEventListener("pointerdown", down);
     return () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mousedown", down);
+      canvas.removeEventListener("pointermove", move);
+      canvas.removeEventListener("pointerdown", down);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -260,7 +262,7 @@ export function HomePage() {
         const tHit = dist / b.vx;
         let predict = b.y + b.vy * tHit;
         predict = reflectY(predict);
-        const maxSpeed = 5.4 + s.difficulty * 1.1;
+        const maxSpeed = Math.max(5.4 + s.difficulty * 1.1, s.speed * 1.25);
         const lag = Math.max(0, 1.6 - s.difficulty * 0.5); // fewer reaction frames at higher diff
         s.cTarget = clamp(predict - PADDLE_H / 2, 0, H - PADDLE_H);
         const dy = s.cTarget - s.cY;
@@ -286,8 +288,8 @@ export function HomePage() {
         const cy = s.pY + PADDLE_H / 2;
         if (b.y >= s.pY - BALL / 2 && b.y <= s.pY + PADDLE_H + BALL / 2) {
           const rel = (b.y - cy) / (PADDLE_H / 2);
-          const speed = Math.hypot(b.vx, b.vy);
           const ang = rel * 0.9;
+          const speed = bumpSpeed(s);
           b.vx = Math.abs(Math.cos(ang) * speed);
           b.vy = Math.sin(ang) * speed;
           b.x = 22 + PADDLE_W + 1;
@@ -299,8 +301,8 @@ export function HomePage() {
         const cy = s.cY + PADDLE_H / 2;
         if (b.y >= s.cY - BALL / 2 && b.y <= s.cY + PADDLE_H + BALL / 2) {
           const rel = (b.y - cy) / (PADDLE_H / 2);
-          const speed = Math.hypot(b.vx, b.vy);
           const ang = rel * 0.9;
+          const speed = bumpSpeed(s);
           b.vx = -Math.abs(Math.cos(ang) * speed);
           b.vy = Math.sin(ang) * speed;
           b.x = W - 22 - PADDLE_W - BALL - 1;
@@ -390,7 +392,7 @@ export function HomePage() {
               width={W}
               height={H}
               className="block w-full"
-              style={{ imageRendering: "pixelated" }}
+              style={{ imageRendering: "pixelated", touchAction: "none" }}
             />
             <div className="crt-scanlines pointer-events-none absolute inset-0" />
             <div className="crt-vignette pointer-events-none absolute inset-0" />
@@ -444,6 +446,18 @@ export function HomePage() {
 
 function clamp(v: number, lo: number, hi: number) {
   return v < lo ? lo : v > hi ? hi : v;
+}
+
+const RALLY_CAP = 1.7; // max speed multiplier relative to the serve speed
+const RALLY_STEP = 1.035; // speed multiplier per paddle hit
+
+// The original Pong's ball accelerates while a rally is alive and resets on a
+// miss. Servings set `speed` to the base; each return nudges it up to a cap.
+function bumpSpeed(s: { speed: number; difficulty: number }) {
+  const base = 5.4 + s.difficulty * 0.9;
+  const cap = base * RALLY_CAP;
+  s.speed = Math.min(Math.max(s.speed, base) * RALLY_STEP, cap);
+  return s.speed;
 }
 
 // Fold a y coordinate back into [0, H] as if bouncing off the top/bottom walls.
