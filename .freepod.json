@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "deployment": {
+    "id": "18ddee15-78ca-4c30-b59a-db20029792c0",
+    "name": "custom-user-app-vz66p8"
+  },
+  "user_values": {
+    "hostname": "pong.prutser.freepod.eu"
+  }
+}
