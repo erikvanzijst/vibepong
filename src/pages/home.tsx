@@ -203,10 +203,12 @@ export function HomePage() {
     const canvas = canvasRef.current!;
     const move = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
+      if (rect.height === 0) return;
       const y = ((e.clientY - rect.top) / rect.height) * H;
       const s = state.current;
       s.mouseActive = true;
       s.mouseY = clamp(y, PADDLE_H / 2, H - PADDLE_H / 2);
+      s.pY = s.mouseY - PADDLE_H / 2;
     };
     const down = () => {
       const s = state.current;
@@ -214,10 +216,10 @@ export function HomePage() {
       else if (s.mode === "serve") launch();
       allowAudio();
     };
-    canvas.addEventListener("pointermove", move);
+    window.addEventListener("pointermove", move);
     canvas.addEventListener("pointerdown", down);
     return () => {
-      canvas.removeEventListener("pointermove", move);
+      window.removeEventListener("pointermove", move);
       canvas.removeEventListener("pointerdown", down);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,9 +248,7 @@ export function HomePage() {
     if (s.keys.up) s.pY -= py * dt;
     if (s.keys.down) s.pY += py * dt;
     if (s.mouseActive) {
-      const dy = s.mouseY - (s.pY + PADDLE_H / 2);
-      // ease toward the pointer, plenty fast to feel 1:1
-      s.pY += clamp(dy, -8.5 * dt, 8.5 * dt);
+      s.pY = s.mouseY - PADDLE_H / 2;
     }
     s.pY = clamp(s.pY, 0, H - PADDLE_H);
     s.time = (s.time ?? 0) + dt;
