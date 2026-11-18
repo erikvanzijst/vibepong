@@ -15,6 +15,11 @@ person instead of reading its future.
 - 8-bit sound effects synthesized in the browser with the Web Audio API — no
   audio files.
 - Keyboard, mouse, and touch controls.
+- A portrait mode for phones: the playfield turns a quarter turn, your paddle
+  sits at the bottom of the screen, and the deck below it is left free for your
+  thumb.
+- Chrome that shrinks with the screen: a compact marquee and switch row on
+  phones, and a side rail of switches when a phone is held sideways.
 - A CRT cabinet built in CSS: scanlines, phosphor glow, flicker, and a walnut
   woodgrain panel.
 
@@ -27,6 +32,11 @@ person instead of reading its future.
 | Start / restart | `START` button | `START` button |
 | Difficulty | Buttons `1`, `2`, `3` | Buttons `1`, `2`, `3` |
 | Mute | `SND` / `MUT` button | `SND` / `MUT` button |
+
+On a phone held upright the screen turns a quarter turn: your paddle is at the
+bottom and moves left and right. Only the sideways position of your finger
+matters, so you can keep it on the deck below the screen, clear of the paddle.
+Held sideways, the switches move to a rail beside the screen.
 
 ## Run locally
 

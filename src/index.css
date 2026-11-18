@@ -23,6 +23,9 @@
     font-family: "Geist Variable", monospace, sans-serif;
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
