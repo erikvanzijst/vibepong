@@ -4,6 +4,6 @@
   "deployment": "9b146322-546b-4b5d-a863-fdbd5ea5f30d",
   "name": "Pong",
   "description": "The 1972 arcade classic in a 1970s CRT cabinet. First to 11.",
-  "hostname": "pong",
+  "hostname": "pong-prutser.freepod.app",
   "icon": "public/icon.png"
 }
