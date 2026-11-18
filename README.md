@@ -4,7 +4,7 @@ The 1972 arcade classic, rebuilt for the browser inside a 1970s walnut-and-CRT
 cabinet. Single player against a CPU opponent that tracks the ball like a
 person instead of reading its future.
 
-![Pong app icon](public/icon.png)
+<img src="public/icon.png" alt="Pong app icon" width="160" />
 
 ## Features
 
@@ -69,7 +69,7 @@ freepod deploy
 | `server/same-origin.ts` | Cross-origin write protection and page security headers |
 | `public/` | Favicon and app icon |
 
-The game has no backend, database, or stored data. Everything lives in the
+The game has no API, database, or stored data. Everything lives in the
 browser tab and is gone when it closes.
 
 ## License
