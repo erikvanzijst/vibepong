@@ -1,45 +1,77 @@
-# App
+# Pong
 
-A Freepod app: TypeScript, one Node process serving the API (Hono) and the
-frontend (React, Vite, Tailwind, shadcn/ui), with PostgreSQL through Drizzle.
-Working code for common features (records per user, file uploads, sign-in)
-is in `/opt/appstudio/examples`: read it and copy what you need.
+The 1972 arcade classic, rebuilt for the browser inside a 1970s walnut-and-CRT
+cabinet. Single player against a CPU opponent that tracks the ball like a
+person instead of reading its future.
 
-## Run it
+![Pong app icon](public/icon.png)
+
+## Features
+
+- Canvas game loop with the original's rough physics: the ball speeds up
+  through a rally and resets on every serve.
+- A CPU that reacts late, aims with error, and never moves faster than you.
+- Three difficulty levels, first to 11 wins.
+- 8-bit sound effects synthesized in the browser with the Web Audio API — no
+  audio files.
+- Keyboard, mouse, and touch controls.
+- A CRT cabinet built in CSS: scanlines, phosphor glow, flicker, and a walnut
+  woodgrain panel.
+
+## Controls
+
+| Action | Keyboard | Pointer |
+| --- | --- | --- |
+| Move paddle | `↑` / `↓` or `W` / `S` | Move the mouse or finger |
+| Serve | `Space` or `Enter` | Click or tap the screen, or the big round button |
+| Start / restart | `START` button | `START` button |
+| Difficulty | Buttons `1`, `2`, `3` | Buttons `1`, `2`, `3` |
+| Mute | `SND` / `MUT` button | `SND` / `MUT` button |
+
+## Run locally
+
+Requires Node.js 24.
 
 ```bash
 npm install
-dev-app                       # App Studio: runs it with a local database and S3,
-                              # live at $APPSTUDIO_PREVIEW_URL, with hot reload
+npm run dev
 ```
 
-Without App Studio: set `DATABASE_URL` (and the `AWS_*` variables for S3), then
-`PORT=8080 npm run dev`.
+The app is at <http://localhost:8080>. Set `PORT` to use another port.
 
-`npm run build && npm start` runs it as Freepod does. `npm run check` type-checks.
+## Production
+
+```bash
+npm run build   # writes the frontend to dist/
+npm start       # serves dist/ and /healthz on 0.0.0.0:$PORT
+```
+
+`npm run check` type-checks the project.
+
+## Deploy
+
+The app runs as a single Node process and keeps no state, so it fits Freepod
+as-is:
+
+```bash
+freepod init --name "Pong" --hostname pong
+freepod deploy
+```
 
 ## Layout
 
 | Path | What |
-|------|------|
-| `server/index.ts` | Startup: migrations, then the server on `$PORT` (with Vite in development) |
-| `server/api.ts` | The API, mounted at `/api`; larger areas go in `server/routes/` |
-| `server/auth.ts` | The signed-in user from Sign in with Freepod; `requireUser` for private routes |
-| `server/db/schema.ts` | Tables; after a change, `npm run db:generate` writes a migration to `drizzle/` |
-| `server/storage.ts` | The app's S3 bucket |
+| --- | --- |
+| `src/pages/home.tsx` | The game: physics, CPU, sound, canvas drawing, and cabinet UI |
+| `src/index.css` | Tailwind entry point and the cabinet's CRT and hardware styling |
 | `src/config.ts` | The app's name |
-| `src/App.tsx` | The pages (one route each), inside the app shell |
-| `src/components/app-shell.tsx` | Header, page frame and footer around every page |
-| `src/pages/` | The pages; `home.tsx` is a placeholder to replace |
-| `src/components/ui/` | shadcn/ui components |
-| `DESIGN.md` | How the frontend should look |
+| `server/index.ts` | One process for the API-free frontend, in development and production |
+| `server/same-origin.ts` | Cross-origin write protection and page security headers |
+| `public/` | Favicon and app icon |
 
-## Rules that keep it deployable
+The game has no backend, database, or stored data. Everything lives in the
+browser tab and is gone when it closes.
 
-- Keep the `start` script. Without it, Freepod's builder serves `dist/` as a
-  static site and the API never runs. Never start production with `vite` or
-  `vite preview`.
-- Every setting comes from the environment (`DATABASE_URL`, `AWS_*`,
-  `S3_BUCKET`, the app's own vars); nothing is hardcoded or committed.
-- Schema changes go through migrations in `drizzle/`, which run at startup.
-- Nothing written to the local disk survives a restart; files go to S3.
+## License
+
+[MIT](LICENSE)

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { appName } from "@/config";
 
 // ---------------------------------------------------------------- constants
 const W = 840; // playfield width, internal units
@@ -79,6 +80,8 @@ interface Ball {
 // ---------------------------------------------------------------- game
 export function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cabinetRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
 
   const [mode, setMode] = useState<Mode>("attract");
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(2);
@@ -106,6 +109,32 @@ export function HomePage() {
     flash: 0,
     time: 0,
   });
+
+  // Scale the whole cabinet down when the window is smaller than it is, so the
+  // marquee and control panel stay on screen on short laptop viewports.
+  useLayoutEffect(() => {
+    const fit = () => {
+      const cabinet = cabinetRef.current;
+      if (!cabinet) return;
+      const { offsetWidth, offsetHeight } = cabinet;
+      if (!offsetWidth || !offsetHeight) return;
+      setScale(
+        Math.min(
+          1,
+          (window.innerWidth - 24) / offsetWidth,
+          (window.innerHeight - 24) / offsetHeight,
+        ),
+      );
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    if (cabinetRef.current) observer.observe(cabinetRef.current);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, []);
 
   // ------------------------------------------------------------ controls
   const press = (k: "up" | "down", v: boolean) => {
@@ -355,17 +384,21 @@ export function HomePage() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-screen items-center justify-center bg-[#050402] p-4">
-      <div className="woodgrain-panel relative flex w-full max-w-[1060px] flex-col rounded-[22px] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.8)]">
+    <div className="flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#050402] p-2">
+      <div
+        ref={cabinetRef}
+        style={{ transform: `scale(${scale})` }}
+        className="woodgrain-panel relative flex w-full max-w-[1060px] flex-col rounded-[22px] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.8)]"
+      >
         {/* Marquee */}
         <div className="mb-5 flex items-center justify-between px-3">
           <div className="flex flex-col leading-none">
             <span className="arcade-marquee-text text-[13px]">ATARI</span>
-            <span className="mt-1 text-[10px] uppercase tracking-[0.28em] text-[#d9b97a]/80">
+            <span className="mt-1 hidden text-[10px] uppercase tracking-[0.28em] text-[#d9b97a]/80 sm:block">
               Est. 1972 · Coin-Op
             </span>
           </div>
-          <h1 className="arcade-marquee-text text-4xl sm:text-5xl">PONG</h1>
+          <h1 className="arcade-marquee-text text-4xl sm:text-5xl">{appName}</h1>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
               <button
@@ -459,8 +492,6 @@ function bumpSpeed(s: { speed: number; difficulty: number }) {
   s.speed = Math.min(Math.max(s.speed, base) * RALLY_STEP, cap);
   return s.speed;
 }
-
-// Fold a y coordinate back into [0, H] as if bouncing off the top/bottom walls.
 
 // How often (in frames) the CPU re-evaluates where the ball actually is. A
 // longer interval = a slower, more human reaction time at lower difficulty.

@@ -1,2 +1,2 @@
-// The app's name, shown in the header and the browser tab.
-export const appName = "PONG // 1972";
+// The name shown in the marquee and the browser tab.
+export const appName = "PONG";

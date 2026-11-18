@@ -1,10 +1,9 @@
 {
-  "version": 1,
-  "deployment": {
-    "id": "9b146322-546b-4b5d-a863-fdbd5ea5f30d",
-    "name": "custom-user-app-675l7q"
-  },
-  "user_values": {
-    "hostname": "pong"
-  }
+  "$schema": "https://freepod.eu/api/products/custom/project-schema",
+  "version": 2,
+  "deployment": "9b146322-546b-4b5d-a863-fdbd5ea5f30d",
+  "name": "Pong",
+  "description": "The 1972 arcade classic in a 1970s CRT cabinet. First to 11.",
+  "hostname": "pong",
+  "icon": "public/icon.png"
 }
